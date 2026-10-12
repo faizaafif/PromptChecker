@@ -1,0 +1,12 @@
+suite_name: "basic-suite"
+provider:
+  name: "mock"
+  config:
+    responses:
+      hello: "Hello world"
+tests:
+  - name: "greet"
+    prompt: "hello"
+    expect:
+      evaluator: "exact_match"
+      value: "Hello world"

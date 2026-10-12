@@ -12,3 +12,6 @@ license = {text = "MIT"}
 authors = [
   {name = "Faiza"}
 ]
+dependencies = [
+  "PyYAML>=6.0",
+]
