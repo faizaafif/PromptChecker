@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from promptcheck.config import load_suite
+from promptcheck.reporters import write_report
 from promptcheck.runner import run_suite
 
 
@@ -21,6 +22,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run a YAML prompt test suite.",
     )
     run_parser.add_argument("suite", help="Path to a YAML suite file.")
+    run_parser.add_argument(
+        "--report",
+        default=None,
+        help="Path to write a JSON report file.",
+    )
 
     return parser
 
@@ -69,6 +75,15 @@ def main(argv: list[str] | None = None) -> int:
             elif tr.eval_result and tr.eval_result.message:
                 detail = f" - {tr.eval_result.message}"
             print(f"  [{status}] {tr.test_name}{detail}")
+
+        # Write JSON report if requested
+        if args.report:
+            try:
+                report_path = write_report(result, args.report)
+                print(f"Report written to: {report_path}")
+            except Exception as exc:
+                print(f"Error writing report: {exc}")
+                return 1
 
         # Exit code: 0 if all passed, 1 if any failed or errored
         if result.failed > 0 or result.errors > 0:
