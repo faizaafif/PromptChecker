@@ -69,3 +69,59 @@ class TestUnknownEvaluator:
     def test_unknown_evaluator(self):
         with pytest.raises(ValueError, match="Unknown evaluator"):
             evaluate("nonexistent", "a", "b")
+
+
+class TestStartsWith:
+    """Tests for the starts_with evaluator."""
+
+    def test_pass_when_starts_with(self):
+        result = evaluate("starts_with", "Hello", "Hello world")
+        assert result.passed is True
+        assert result.message == ""
+
+    def test_fail_when_not_starting(self):
+        result = evaluate("starts_with", "world", "Hello world")
+        assert result.passed is False
+        assert "start with" in result.message
+
+    def test_case_sensitive(self):
+        result = evaluate("starts_with", "hello", "Hello world")
+        assert result.passed is False
+
+    def test_full_match_passes(self):
+        result = evaluate("starts_with", "hello", "hello")
+        assert result.passed is True
+
+    def test_empty_expected_always_passes(self):
+        result = evaluate("starts_with", "", "anything")
+        assert result.passed is True
+
+
+class TestRegexMatch:
+    """Tests for the regex_match evaluator."""
+
+    def test_pass_on_simple_pattern(self):
+        result = evaluate("regex_match", r"Hello \w+", "Hello world")
+        assert result.passed is True
+        assert result.message == ""
+
+    def test_fail_when_no_match(self):
+        result = evaluate("regex_match", r"^goodbye", "Hello world")
+        assert result.passed is False
+        assert "did not match" in result.message
+
+    def test_partial_match_passes(self):
+        result = evaluate("regex_match", r"\d+", "abc 123 def")
+        assert result.passed is True
+
+    def test_anchored_pattern(self):
+        result = evaluate("regex_match", r"^Hello$", "Hello")
+        assert result.passed is True
+
+    def test_anchored_pattern_fails(self):
+        result = evaluate("regex_match", r"^Hello$", "Hello world")
+        assert result.passed is False
+
+    def test_invalid_regex_raises(self):
+        with pytest.raises(ValueError, match="Invalid regex pattern"):
+            evaluate("regex_match", r"[invalid", "anything")
