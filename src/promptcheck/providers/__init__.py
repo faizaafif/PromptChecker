@@ -30,4 +30,9 @@ class BaseProvider(ABC):
 
             return MockProvider(config)
 
+        if name == "ollama":
+            from promptcheck.providers.ollama import OllamaProvider
+
+            return OllamaProvider(config)
+
         raise ValueError(f"Unknown provider: '{name}'")
