@@ -59,3 +59,13 @@ class SuiteResult:
     errors: int = 0
     duration_seconds: float = 0.0
     test_results: list[TestResult] = field(default_factory=list)
+
+
+@dataclass
+class ComparisonResult:
+    """The result of running the same tests against multiple providers."""
+
+    suite_name: str
+    provider_count: int = 0
+    total_duration_seconds: float = 0.0
+    suite_results: list[SuiteResult] = field(default_factory=list)

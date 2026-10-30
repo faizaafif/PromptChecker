@@ -6,20 +6,23 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from promptcheck.models import SuiteResult
+from promptcheck.models import ComparisonResult, SuiteResult
 
 
-def to_dict(result: SuiteResult) -> dict:
-    """Convert a SuiteResult to a plain dictionary for JSON serialization."""
+def to_dict(result: SuiteResult | ComparisonResult) -> dict:
+    """Convert a SuiteResult or ComparisonResult to a plain dictionary."""
     return asdict(result)
 
 
-def to_json(result: SuiteResult, indent: int = 2) -> str:
-    """Serialize a SuiteResult to a JSON string."""
+def to_json(result: SuiteResult | ComparisonResult, indent: int = 2) -> str:
+    """Serialize a result to a JSON string."""
     return json.dumps(to_dict(result), indent=indent, ensure_ascii=False)
 
 
-def write_report(result: SuiteResult, path: str | Path) -> Path:
+def write_report(
+    result: SuiteResult | ComparisonResult,
+    path: str | Path,
+) -> Path:
     """Write a JSON report to the given file path.
 
     Creates parent directories if they don't exist.

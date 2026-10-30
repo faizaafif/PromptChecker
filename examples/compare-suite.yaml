@@ -1,0 +1,23 @@
+suite_name: "compare-models"
+providers:
+  - name: "mock"
+    config:
+      responses:
+        hello: "Hello world"
+        translate: "Bonjour"
+  - name: "mock"
+    config:
+      responses:
+        hello: "Hi there, world!"
+        translate: "Bonjour le monde"
+tests:
+  - name: "greeting"
+    prompt: "hello"
+    expect:
+      evaluator: "contains"
+      value: "world"
+  - name: "french-translation"
+    prompt: "translate"
+    expect:
+      evaluator: "starts_with"
+      value: "Bonjour"

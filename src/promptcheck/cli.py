@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import argparse
 
-from promptcheck.config import load_suite
+from promptcheck.config import load_comparison, load_suite
 from promptcheck.reporters import write_report
-from promptcheck.runner import run_suite
+from promptcheck.runner import run_comparison, run_suite
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,6 +26,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--report",
         default=None,
         help="Path to write a JSON report file.",
+    )
+
+    compare_parser = subparsers.add_parser(
+        "compare",
+        help="Run the same tests against multiple providers.",
+    )
+    compare_parser.add_argument("suite", help="Path to a comparison YAML file.")
+    compare_parser.add_argument(
+        "--report",
+        default=None,
+        help="Path to write a JSON comparison report.",
     )
 
     return parser
@@ -89,6 +100,64 @@ def main(argv: list[str] | None = None) -> int:
         if result.failed > 0 or result.errors > 0:
             return 1
         return 0
+
+    if args.command == "compare":
+        try:
+            comparison = load_comparison(args.suite)
+        except (FileNotFoundError, ValueError) as exc:
+            print(f"Error: {exc}")
+            return 2
+        except Exception as exc:  # pragma: no cover
+            print(f"Unexpected error loading suite: {exc}")
+            return 1
+
+        try:
+            comp_result = run_comparison(comparison)
+        except Exception as exc:
+            print(f"Error running comparison: {exc}")
+            return 1
+
+        # Print comparison summary
+        print(f"Suite: {comp_result.suite_name}")
+        print(f"Providers compared: {comp_result.provider_count}")
+        print(f"Total duration: {comp_result.total_duration_seconds:.4f}s")
+        print()
+
+        any_failures = False
+        for sr in comp_result.suite_results:
+            print(f"--- Provider: {sr.provider_name} ---")
+            print(f"  Total: {sr.total}  "
+                  f"Passed: {sr.passed}  "
+                  f"Failed: {sr.failed}  "
+                  f"Errors: {sr.errors}")
+            for tr in sr.test_results:
+                status = "ERROR"
+                if tr.error:
+                    status = "ERROR"
+                elif tr.eval_result and tr.eval_result.passed:
+                    status = "PASS"
+                else:
+                    status = "FAIL"
+                detail = ""
+                if tr.error:
+                    detail = f" - {tr.error}"
+                elif tr.eval_result and tr.eval_result.message:
+                    detail = f" - {tr.eval_result.message}"
+                print(f"  [{status}] {tr.test_name}{detail}")
+            print()
+            if sr.failed > 0 or sr.errors > 0:
+                any_failures = True
+
+        # Write JSON report if requested
+        if args.report:
+            try:
+                report_path = write_report(comp_result, args.report)
+                print(f"Report written to: {report_path}")
+            except Exception as exc:
+                print(f"Error writing report: {exc}")
+                return 1
+
+        return 1 if any_failures else 0
 
     parser.print_help()
     return 0

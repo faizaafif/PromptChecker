@@ -5,9 +5,10 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from promptcheck.config import SuiteConfig
+from promptcheck.config import ComparisonConfig, SuiteConfig
 from promptcheck.evaluators import evaluate
 from promptcheck.models import (
+    ComparisonResult,
     EvalResult,
     ProviderResult,
     SuiteResult,
@@ -126,3 +127,32 @@ def _run_single_test(case: TestCase, provider: BaseProvider) -> TestResult:
         eval_result=eval_result,
         duration_seconds=duration,
     )
+
+
+def run_comparison(comparison: ComparisonConfig) -> ComparisonResult:
+    """Run the same tests against every provider and collect results.
+
+    Each provider gets its own SuiteResult. The ComparisonResult wraps
+    them all so downstream reporting can display a side-by-side view.
+    """
+    total_start = time.monotonic()
+
+    result = ComparisonResult(
+        suite_name=comparison.suite_name,
+        provider_count=len(comparison.providers),
+    )
+
+    for prov_cfg in comparison.providers:
+        # Build a single-provider SuiteConfig so we reuse run_suite().
+        single = SuiteConfig(
+            suite_name=comparison.suite_name,
+            provider=prov_cfg,
+            tests=comparison.tests,
+        )
+        suite_result = run_suite(single)
+        result.suite_results.append(suite_result)
+
+    result.total_duration_seconds = round(
+        time.monotonic() - total_start, 6
+    )
+    return result
