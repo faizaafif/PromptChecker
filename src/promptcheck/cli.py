@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from promptcheck.config import load_comparison, load_suite
+from promptcheck.html_reporter import write_html_report
 from promptcheck.reporters import write_report
 from promptcheck.runner import run_comparison, run_suite
 
@@ -27,6 +28,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Path to write a JSON report file.",
     )
+    run_parser.add_argument(
+        "--html",
+        default=None,
+        help="Path to write an HTML report file.",
+    )
 
     compare_parser = subparsers.add_parser(
         "compare",
@@ -37,6 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--report",
         default=None,
         help="Path to write a JSON comparison report.",
+    )
+    compare_parser.add_argument(
+        "--html",
+        default=None,
+        help="Path to write an HTML comparison report.",
     )
 
     return parser
@@ -94,6 +105,15 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Report written to: {report_path}")
             except Exception as exc:
                 print(f"Error writing report: {exc}")
+                return 1
+
+        # Write HTML report if requested
+        if args.html:
+            try:
+                html_path = write_html_report(result, args.html)
+                print(f"HTML report written to: {html_path}")
+            except Exception as exc:
+                print(f"Error writing HTML report: {exc}")
                 return 1
 
         # Exit code: 0 if all passed, 1 if any failed or errored
@@ -155,6 +175,15 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Report written to: {report_path}")
             except Exception as exc:
                 print(f"Error writing report: {exc}")
+                return 1
+
+        # Write HTML report if requested
+        if args.html:
+            try:
+                html_path = write_html_report(comp_result, args.html)
+                print(f"HTML report written to: {html_path}")
+            except Exception as exc:
+                print(f"Error writing HTML report: {exc}")
                 return 1
 
         return 1 if any_failures else 0
